@@ -2,9 +2,9 @@
 
 ### Deadline: October 24, 2024, 23:59
 
-### Name:
+### Name: Boqi Wang
 
-### Student ID:
+### Student ID: 122090511
 
 ---
 
@@ -250,19 +250,37 @@ You will receive 1 point for including the required figures in your `.ipynb`: a 
 
    What is the role of a Lambda function in serverless deployment? How does the `lambda_handler` function work to process requests?
 
-   **Answer**: &lt;You answer goes here&gt;.
+   **Answer**:
 
-2. **API Gateway and Lambda Integration** (0.5 point):
+   （1）A Lambda function in serverless deployment is a piece of code that runs in response to events, such as HTTP requests, database actions, or file uploads. It is executed without the need for provisioning or managing servers. The cloud provider runs the code in a highly available compute environment and scales automatically. Lambda functions are event-driven, pay-per-use, and can significantly reduce operational costs and complexity.
+
+   （2）The `lambda_handler` function is the core of a serverless application that processes requests using AWS Lambda. It begins by loading a machine learning model with `pickle.load`. When invoked, it receives an `event` object containing the request data and a `context` object providing runtime information.
+The function extracts input values from the event's JSON body and passes them to the `predict` function, which utilizes the loaded model to generate predictions. These predictions are then packaged into a JSON response with a status code of 200.
+Error handling is robust, with specific responses for missing fields (400 status code), invalid JSON (400 status code), and other exceptions (500 status code). The function returns a response object, which AWS Lambda then converts into an HTTP response or another format as required by the invocation event.
+In summary, `lambda_handler` serves as the interface between incoming requests and the machine learning model, managing data flow, error handling, and response formatting for a serverless prediction service.
+
+
+3. **API Gateway and Lambda Integration** (0.5 point):
 
    Explain the purpose of API Gateway in this deployment process. How does it route requests to the Lambda function?
 
-   **Answer**: &lt;You answer goes here&gt;.
+   **Answer**:
 
-3. **ECR Role** (0.5 point):
+   API Gateway in the deployment process acts as the entry point for all client requests, providing a secure, scalable, and efficient way to manage and route these requests to the appropriate backend service, such as a Lambda function. It receives HTTP requests from clients, directs them to the correct Lambda function based on the configured API endpoints and HTTP methods, and handles aspects like security, monitoring, and throttling to ensure the backend services remain available and responsive under varying loads. This integration with Lambda allows for a seamless flow of data between the client and serverless compute resources, facilitating a robust serverless architecture.
+
+
+5. **ECR Role** (0.5 point):
 
    What is the role of ECR in this deployment? How does it integrate with Lambda for managing containerized applications?
 
-   **Answer**: &lt;You answer goes here&gt;.
+   **Answer**:
+   
+   (1)Role of ECR in Deployment:
+   Amazon ECR serves as a repository to store Docker container images for the Lambda function. It allows you to upload,        store, and manage these images, which include the application code and any necessary dependencies, on AWS.
+
+   (2)Integration with Lambda:
+   AWS Lambda integrates with ECR by enabling the creation of Lambda functions directly from the container images stored in    ECR. This setup allows for a serverless deployment where the Lambda function runs within a container, providing a           consistent environment and simplifying the management of applications with specific runtime needs.
+
 
 ### Analysis of Cold Start Phenomenon
 
@@ -270,13 +288,45 @@ You will receive 1 point for including the required figures in your `.ipynb`: a 
 
    Provide your analysis comparing the performance of requests during cold starts versus warm requests (based on the line graph and histograms you obtained in `performance_analysis.ipynb`). Discuss the differences in response times and any notable patterns observed during your load testing.
 
-   **Answer**: &lt;You answer goes here&gt;.
+   **Answer**: ![image](https://github.com/user-attachments/assets/a1652a2f-4cdf-4061-9e43-9c8fab575713)
+   ![image](https://github.com/user-attachments/assets/6309ff4c-6d6c-4ae3-be1d-f1e1a1856054)
 
-5. **Implications and Strategies** (0.5 Point):
+(1)Initial High Response Times: Cold start requests exhibited significantly higher response times compared to warm requests, as indicated by the initial spike in the line graph.
+
+(2)Decrease in Response Times: After the initial cold starts, the response times decreased substantially, aligning with the system becoming warmed up and ready to handle requests more efficiently.
+
+(3)Variability in Cold Starts: The histogram for cold starts showed a wider spread of response times, suggesting greater variability in the initialization phase.
+
+(4)Consistency in Warm Requests: In contrast, the histogram for warm requests displayed a more concentrated distribution, indicating more consistent and faster response times once the system was warmed up.
+
+(5)Performance Metrics: The 50th percentile (median), 95th percentile, and mean response times were notably higher for cold starts, reflecting the impact of the initial setup time on performance.
+
+
+
+6. **Implications and Strategies** (0.5 Point):
 
    Discuss the implications of cold starts on serverless applications and how they affect performance. What strategies can be employed to mitigate these effects?
 
-   **Answer**: &lt;You answer goes here&gt;.
+   **Answer**:
+Cold starts have several implications for serverless applications and can significantly affect their performance:
+
+(1)Increased Latency: Cold starts introduce additional latency as the serverless platform needs to initialize the execution environment for each new request. This can lead to slower response times, especially for the first request after a period of inactivity.
+
+(2)User Experience: The increased latency can negatively impact the user experience, particularly for applications where quick response times are critical, such as in real-time applications or user-facing services.
+
+(3)Resource Utilizatio: Each cold start requires the platform to provision resources, which can lead to higher resource utilization and costs, especially if the application experiences frequent traffic spikes followed by periods of inactivity.
+
+To mitigate the effects of cold starts, several strategies can be employed:
+
+(1)Keep-Alive: One approach is to keep the function "warm" by periodically sending requests to the function, ensuring that the execution environment remains active and ready to handle incoming requests quickly.
+
+(2)Provisioned Concurrency: Using provisioned concurrency can help by pre-warming the execution environment for a specified number of instances, reducing the impact of cold starts for applications with predictable traffic patterns.
+
+(3)Optimizing Code: Reducing the size of the deployment package and optimizing the startup code can decrease the time it takes for the function to initialize, thus minimizing the duration of cold starts.
+
+(4)Architecture Design: Designing the application architecture to separate cold-start prone functions from those that need to be responsive can also help. For instance, using a combination of serverless and container-based services can provide a balance between cost and performance.
+
+
 
 ## Submission Requirements
 
