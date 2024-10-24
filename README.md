@@ -252,7 +252,7 @@ You will receive 1 point for including the required figures in your `.ipynb`: a 
 
    **Answer**:
 
-   （1）A Lambda function in serverless deployment is a piece of code that runs in response to events, such as HTTP requests, database actions, or file uploads. It is executed without the need for provisioning or managing servers. The cloud provider runs the code in a highly available compute environment and scales automatically. Lambda functions are event-driven, pay-per-use, and can significantly reduce operational costs and complexity.
+   （1）A Lambda function in serverless deployment is a piece of code that runs in response to events, such as HTTP requests, database actions, or file uploads. It is executed without the need for provisioning or managing servers. The cloud provider runs the code in a highly available compute environment and scales automatically.
 
    （2）The `lambda_handler` function is the core of a serverless application that processes requests using AWS Lambda. It begins by loading a machine learning model with `pickle.load`. When invoked, it receives an `event` object containing the request data and a `context` object providing runtime information.
 The function extracts input values from the event's JSON body and passes them to the `predict` function, which utilizes the loaded model to generate predictions. These predictions are then packaged into a JSON response with a status code of 200.
@@ -288,18 +288,34 @@ In summary, `lambda_handler` serves as the interface between incoming requests a
 
    Provide your analysis comparing the performance of requests during cold starts versus warm requests (based on the line graph and histograms you obtained in `performance_analysis.ipynb`). Discuss the differences in response times and any notable patterns observed during your load testing.
 
-   **Answer**: ![image](https://github.com/user-attachments/assets/a1652a2f-4cdf-4061-9e43-9c8fab575713)
-   ![image](https://github.com/user-attachments/assets/6309ff4c-6d6c-4ae3-be1d-f1e1a1856054)
+   **Answer**:![image](https://github.com/user-attachments/assets/4b0265c8-7c8a-4bdd-be5d-0a4c536b4eb1)
+   ![image](https://github.com/user-attachments/assets/12291add-7ac9-4c6c-a097-08660b52516d)
 
-(1)Initial High Response Times: Cold start requests exhibited significantly higher response times compared to warm requests, as indicated by the initial spike in the line graph.
 
-(2)Decrease in Response Times: After the initial cold starts, the response times decreased substantially, aligning with the system becoming warmed up and ready to handle requests more efficiently.
 
-(3)Variability in Cold Starts: The histogram for cold starts showed a wider spread of response times, suggesting greater variability in the initialization phase.
+(1) Cold Start Performance:
+- Response times primarily between 2200-3000ms
+- Scattered distribution with fewer requests
+- Shows significant response time fluctuations
+- Median around 2600ms
 
-(4)Consistency in Warm Requests: In contrast, the histogram for warm requests displayed a more concentrated distribution, indicating more consistent and faster response times once the system was warmed up.
+(2) Warm Request Performance:
+- Response times primarily between 240-360ms
+- Approximately 10x faster than cold starts
+- Concentrated distribution with high request volume
+- Median around 260ms
+- Shows typical right-skewed latency distribution
 
-(5)Performance Metrics: The 50th percentile (median), 95th percentile, and mean response times were notably higher for cold starts, reflecting the impact of the initial setup time on performance.
+(3) Performance Stabilization Characteristics:
+- System stabilizes quickly after initial cold start
+- Minimal performance fluctuation after warm-up
+- P50, P95, and max metrics converge after warm-up
+- Maintains consistent performance throughout
+
+(4) Key Metrics Comparison:
+- Cold starts: Mean ~2600ms, P95 ~3000ms, high variance
+- Warm requests: Mean ~260ms, P95 ~300ms, low variance
+- P95-P50 spread significantly smaller in warm state
 
 
 
@@ -308,23 +324,25 @@ In summary, `lambda_handler` serves as the interface between incoming requests a
    Discuss the implications of cold starts on serverless applications and how they affect performance. What strategies can be employed to mitigate these effects?
 
    **Answer**:
-Cold starts have several implications for serverless applications and can significantly affect their performance:
+Cold starts have several significant implications for serverless applications' performance:
 
-(1)Increased Latency: Cold starts introduce additional latency as the serverless platform needs to initialize the execution environment for each new request. This can lead to slower response times, especially for the first request after a period of inactivity.
+(1) Significant Latency Impact: As shown in our performance analysis, cold starts introduce a dramatic increase in response time - from ~260ms (warm) to ~2600ms (cold), representing a 10x increase in latency. This substantial difference is clearly visible in both the time series and histogram plots.
 
-(2)User Experience: The increased latency can negatively impact the user experience, particularly for applications where quick response times are critical, such as in real-time applications or user-facing services.
+(2) Performance Variability: The histograms demonstrate that cold starts not only have higher latency but also show greater variability. While warm requests cluster tightly around 240-360ms, cold starts spread between 2200-3000ms, making performance less predictable.
 
-(3)Resource Utilizatio: Each cold start requires the platform to provision resources, which can lead to higher resource utilization and costs, especially if the application experiences frequent traffic spikes followed by periods of inactivity.
+(3) Initial User Experience Impact: The time series graph shows a clear "warmup period" where the first few requests experience significantly higher latency, which could particularly affect early users of the service after deployment or during low-traffic periods.
 
-To mitigate the effects of cold starts, several strategies can be employed:
+To mitigate these effects, several strategies can be implemented based on our observations:
 
-(1)Keep-Alive: One approach is to keep the function "warm" by periodically sending requests to the function, ensuring that the execution environment remains active and ready to handle incoming requests quickly.
+(1) Intelligent Warming Strategy: Given the clear performance difference shown in our metrics (p50 of ~260ms for warm vs ~2600ms for cold), implementing a proactive warming strategy for critical paths is crucial. The graphs show that once warmed, performance remains consistently good.
 
-(2)Provisioned Concurrency: Using provisioned concurrency can help by pre-warming the execution environment for a specified number of instances, reducing the impact of cold starts for applications with predictable traffic patterns.
+(2) Concurrency Management: The stable performance after warmup (as shown in the time series graph) suggests that maintaining a minimum level of warm instances could be beneficial. The p95 metrics show that warm requests stay reliable even under load.
 
-(3)Optimizing Code: Reducing the size of the deployment package and optimizing the startup code can decrease the time it takes for the function to initialize, thus minimizing the duration of cold starts.
+(3) Load Distribution: The histogram of warm requests shows a right-skewed distribution with consistent performance, suggesting that proper load balancing across warmed instances can maintain stable response times.
 
-(4)Architecture Design: Designing the application architecture to separate cold-start prone functions from those that need to be responsive can also help. For instance, using a combination of serverless and container-based services can provide a balance between cost and performance.
+(4) Monitoring and Optimization: The clear distinction between cold and warm performance metrics (as shown in both histograms) indicates the importance of monitoring cold start frequency and optimizing instance lifecycle management accordingly.
+
+This approach ties our performance data directly to practical mitigation strategies, allowing for data-driven decisions in managing cold start impacts.
 
 
 
