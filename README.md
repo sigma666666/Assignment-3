@@ -289,33 +289,48 @@ In summary, `lambda_handler` serves as the interface between incoming requests a
    Provide your analysis comparing the performance of requests during cold starts versus warm requests (based on the line graph and histograms you obtained in `performance_analysis.ipynb`). Discuss the differences in response times and any notable patterns observed during your load testing.
 
    **Answer**:![image](https://github.com/user-attachments/assets/4b0265c8-7c8a-4bdd-be5d-0a4c536b4eb1)
-   ![image](https://github.com/user-attachments/assets/12291add-7ac9-4c6c-a097-08660b52516d)
+   ![image](https://github.com/user-attachments/assets/554c2cb2-b59b-4f17-ae57-8ecbfd38f251)
 
 
 
-(1) Cold Start Performance:
-- Response times primarily between 2200-3000ms
-- Scattered distribution with fewer requests
-- Shows significant response time fluctuations
-- Median around 2600ms
+(1)Overall Performance Pattern (Line Graph):
+- There's a clear distinction between the initial cold start period and subsequent warm requests
+- Initial cold starts show significantly higher response times:
+  * p50 (median): ~2800ms
+  * p95: ~3000ms
+  * max: ~3100ms
+- After warming up, the system stabilizes dramatically:
+  * Response times drop to ~250-300ms
+  * The three metrics (p50, p95, max) converge and remain stable
+  * Very little variance in performance after warmup
 
-(2) Warm Request Performance:
-- Response times primarily between 240-360ms
-- Approximately 10x faster than cold starts
-- Concentrated distribution with high request volume
-- Median around 260ms
-- Shows typical right-skewed latency distribution
+(2)Cold Start Distribution (Upper Histogram):
+- Highly bimodal distribution
+- Main cluster of requests around 250-500ms
+- Smaller cluster of cold starts between 2500-3000ms
+- Clear separation between cold and warm performance
+- Majority of requests (~115) fall in the lower response time range
+- Small number of requests (~2-3) in the cold start range
+- 5th percentile and median are close together, indicating consistency in warm performance
+- 95th percentile is significantly higher due to cold starts
 
-(3) Performance Stabilization Characteristics:
-- System stabilizes quickly after initial cold start
-- Minimal performance fluctuation after warm-up
-- P50, P95, and max metrics converge after warm-up
-- Maintains consistent performance throughout
+(3)Warm Requests Distribution (Lower Histogram):
+- Much tighter distribution
+- Response times clustered in two main ranges:
+  * Group around 240-250ms
+  * Group around 300-310ms
+- Very small variance within each cluster
+- Mean response time ~275ms
+- 5th percentile: ~245ms
+- 95th percentile: ~305ms
+- Difference between p95 and p5 is only about 60ms, showing consistent performance
 
-(4) Key Metrics Comparison:
-- Cold starts: Mean ~2600ms, P95 ~3000ms, high variance
-- Warm requests: Mean ~260ms, P95 ~300ms, low variance
-- P95-P50 spread significantly smaller in warm state
+Key Findings:
+(1)Cold starts incur a significant penalty, with response times roughly 10x higher than warm requests
+(2)Once warmed up, the system maintains very stable performance
+(3)The transition from cold to warm state is sharp rather than gradual
+(4)Warm requests show predictable bi-modal behavior, possibly indicating different processing paths or resource allocation patterns
+(5)The system demonstrates good reliability after warmup, with minimal performance variability
 
 
 
@@ -324,25 +339,22 @@ In summary, `lambda_handler` serves as the interface between incoming requests a
    Discuss the implications of cold starts on serverless applications and how they affect performance. What strategies can be employed to mitigate these effects?
 
    **Answer**:
-Cold starts have several significant implications for serverless applications' performance:
 
-(1) Significant Latency Impact: As shown in our performance analysis, cold starts introduce a dramatic increase in response time - from ~260ms (warm) to ~2600ms (cold), representing a 10x increase in latency. This substantial difference is clearly visible in both the time series and histogram plots.
+(1) Performance Impact
+Cold starts show response times of ~3000ms compared to ~250ms for warm requests, as seen in our data. This 10x delay significantly impacts user experience, particularly for interactive applications and those with strict SLA requirements.
 
-(2) Performance Variability: The histograms demonstrate that cold starts not only have higher latency but also show greater variability. While warm requests cluster tightly around 240-360ms, cold starts spread between 2200-3000ms, making performance less predictable.
+(2) Pre-warming Strategy
+Implement scheduled function invocations to keep instances warm. While this increases costs, it provides more predictable performance for critical applications. The warming frequency should be based on traffic patterns and performance requirements.
 
-(3) Initial User Experience Impact: The time series graph shows a clear "warmup period" where the first few requests experience significantly higher latency, which could particularly affect early users of the service after deployment or during low-traffic periods.
+(3) Code Optimization
+Move initialization code and dependency loading to the module level instead of request handling. Use lightweight frameworks and implement lazy loading for resources. This reduces the initialization overhead during cold starts.
 
-To mitigate these effects, several strategies can be implemented based on our observations:
+(4) Resource Management
+Implement connection pooling for databases and maintain cached resources where possible. This prevents the need to re-establish connections or recreate resources during each cold start.
 
-(1) Intelligent Warming Strategy: Given the clear performance difference shown in our metrics (p50 of ~260ms for warm vs ~2600ms for cold), implementing a proactive warming strategy for critical paths is crucial. The graphs show that once warmed, performance remains consistently good.
+(5) Hybrid Architecture
+For latency-sensitive operations, consider a hybrid approach using both serverless and traditional servers. Critical paths can run on dedicated instances while variable workloads use serverless functions.
 
-(2) Concurrency Management: The stable performance after warmup (as shown in the time series graph) suggests that maintaining a minimum level of warm instances could be beneficial. The p95 metrics show that warm requests stay reliable even under load.
-
-(3) Load Distribution: The histogram of warm requests shows a right-skewed distribution with consistent performance, suggesting that proper load balancing across warmed instances can maintain stable response times.
-
-(4) Monitoring and Optimization: The clear distinction between cold and warm performance metrics (as shown in both histograms) indicates the importance of monitoring cold start frequency and optimizing instance lifecycle management accordingly.
-
-This approach ties our performance data directly to practical mitigation strategies, allowing for data-driven decisions in managing cold start impacts.
 
 
 
